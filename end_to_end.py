@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
 
-from plantcv import plantcv as pcv
-from plantcv.plantcv.morphology.skeletonize import skeletonize
 
+from plantcv import plantcv as pcv
 ###########################
 #       click region      #
 ###########################
@@ -113,7 +112,7 @@ def findnode(img):
     
 
     branch_points_img=pcv.morphology.find_branch_pts(skel_img=skeleton,mask=None) ## 현재 pcv 함수에서 저절로 이미지가 뜨는데 이걸 찾아서 지워야함 (06.10)
-                                                                                ## 
+                                                                                
     return branch_points_img
 
 def find(img6):  ### findnode에서 넘긴 이미지에서 함수가 노드라고 인식한 점들의 좌표를 리스트에 저장
@@ -131,26 +130,14 @@ def find(img6):  ### findnode에서 넘긴 이미지에서 함수가 노드라�
             sum+=1
     return node_x_point,node_y_point
 
-def sobel(img,imgreal,Cursor_xmin,Cursor_xmax,Cursor_ymin,Cursor_ymax,node_x_point,node_y_point):
+def sobel(img,imgreal,Cursor_xmin,Cursor_xmax,Cursor_ymin,Cursor_ymax,node_x_point,node_y_point,tip_x_point,tip_y_point):
     selected_roi_copy=img.copy()
-    img2=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    _,img3=cv2.threshold(img2,0,255,cv2.THRESH_OTSU)
-    g_aa=np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
-    edge_embossing=cv2.filter2D(img3,-1,g_aa)
-    retval3,labels3,stats3,centroids3=cv2.connectedComponentsWithStats(edge_embossing)
-    ptx=[]
-    pty=[]
-    pth=[]
-    ptw=[]
-    for i in range(1,retval3):
-        
-        (x,y,w,h,area)=stats3[i]
-        ptx.append(x)
-        pty.append(y)
-        pth.append(h)
-        ptw.append(w)
-        xmin,xmax=min(ptx),max(ptx)
-        ymin,ymax=min(pty),max(pty)
+    
+    
+    tips_x_max=max(tip_x_point)
+    tips_y_min=min(tip_y_point)
+    tips_y_max=max(tip_y_point)
+    tips_x_min=min(tip_x_point)
         
         
     node_x_max=max(node_x_point)  ## 가장 낮은 노드의 x 좌표
@@ -160,10 +147,10 @@ def sobel(img,imgreal,Cursor_xmin,Cursor_xmax,Cursor_ymin,Cursor_ymax,node_x_poi
     
     
     
-    cv2.rectangle(imgreal,(Cursor_ymin+xmin,Cursor_xmin+ymin),(Cursor_ymin+node_x_max,Cursor_xmin+ymax),(0,0,255),thickness=3)   ##전체높이 영역 바운딩
-    cv2.rectangle(imgreal,(Cursor_ymin+xmin,Cursor_xmin+ymin),(Cursor_ymin+node_x_max,Cursor_xmin+node_y_max),(255,0,0),thickness=2)  ##수관높이 영역 바운딩
-    cv2.rectangle(imgreal,(Cursor_ymin+xmin,Cursor_xmin+node_y_max),(Cursor_ymin+node_x_max,Cursor_xmin+ymax),(0,255,0)) ##수간높이 영역 바운딩
-    return selected_roi_copy,imgreal,node_x_max-xmin,ymax-ymin,ymax-node_y_max
+    cv2.rectangle(imgreal,(Cursor_xmin+tips_x_min,Cursor_ymin+tips_y_min),(Cursor_xmin+node_x_max,Cursor_ymin+tips_y_max),(0,0,255),thickness=3)   ##전체높이 영역 바운딩
+    cv2.rectangle(imgreal,(Cursor_xmin+tips_x_min,Cursor_ymin+tips_y_min),(Cursor_xmin+node_x_max,Cursor_ymin+node_y_max),(255,0,0),thickness=2)  ##수관높이 영역 바운딩
+    cv2.rectangle(imgreal,(Cursor_xmin+tips_x_min,Cursor_ymin+node_y_max),(Cursor_xmin+node_x_max,Cursor_ymin+tips_y_max),(0,255,255)) ##수간높이 영역 바운딩
+    return selected_roi_copy,imgreal,node_x_max-tips_x_min,tips_y_max-tips_y_min,tips_y_max-node_y_max
 
 
 def tracking(bounding_image):
@@ -171,7 +158,7 @@ def tracking(bounding_image):
     
         
     lower_blue=np.array([100,30,220])
-    upper_blue=np.array([255,255,255])
+    upper_blue=np.array([225,225,225])
 
         
     frame23=bounding_image
@@ -183,7 +170,7 @@ def tracking(bounding_image):
             
     blue_result=blue_range
     
-    __,contours1,_=cv2.findContours(blue_result,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours1,_=cv2.findContours(blue_result,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours1:
         (x,y,w,h)=cv2.boundingRect(contour)
         if w<20:      ## 작게 잡히는 노이즈를 제거
@@ -192,14 +179,12 @@ def tracking(bounding_image):
             continue
         pixel_width=w     ## 실제 길이를 구하기위해 checkparm에서 사용 할 마스크 너비
         pixel_height=h     ## 실제 길이를 구하기위해 checkparm에서 사용 할 마스크 높이
-        cv2.rectangle(bounding_image,pt1=(x,y),pt2=(x+w,y+h),color=(255,0,255),thickness=1) ##분홍색 마스크 영역을 바운딩함
+        cv2.rectangle(bounding_image,pt1=(x,y),pt2=(x+w,y+h),color=(255,0,255),thickness=3) ##분홍색 마스크 영역을 바운딩함
 
         
     return bounding_image,pixel_height,pixel_width
 
-###############
-# 
-###############
+
 mask_real_height=20  ## 실제 마스크 높이
 mask_real_width=20  ## 실제 마스크 너비
 def checkhow(h,w,object_width,object_height,object_spec_height):
@@ -220,7 +205,19 @@ def checkhow(h,w,object_width,object_height,object_spec_height):
     sgh=int(final_height-smh)   ## 수관높이
     print("수목높이,수목너비,수간높이,수관높이",final_height,final_width,smh,sgh)
 
+def findtips(img):
+    pcv.params.debug="plot"
+    
+    ret,img=cv2.threshold(img,127,255,0)
+    skeleton=pcv.morphology.skeletonize(mask=img)
+    
 
+    pcv.params.line_thickness=3
+
+
+    tips_img=pcv.morphology.find_tips(skel_img=skeleton)
+    
+    return tips_img
 
 if __name__ == '__main__':
     Img_origin=cv2.imread('treemask.jpg') ## 연산을 할 사진을 불러옴. 
@@ -230,11 +227,14 @@ if __name__ == '__main__':
 
 
     roi_skeletonize=skeleton(selected_roi) ## findnode에서 이미지를 돌리기 위해서 스켈레톤화를 진행함
-
+    tip_binary_image=findtips(roi_skeletonize)
+    tip_binary_numpy_image=np.array(tip_binary_image)
+    tip_x_point,tip_y_point=find(tip_binary_numpy_image)
     node_binary_image=findnode(roi_skeletonize) ## plantcv의 findnode 함수를 이용해서 가장 아래 브랜치를 구함
     node_binary_numpy_image=np.array(node_binary_image) ##findxy에서 넘파이 배열을 필요로 하기 때문에 넘파이배열로 바꿔줌
     node_x_point,node_y_point=find(node_binary_numpy_image) ## plantcv에서 findnode 돌린 이미지에서 가장 바깥 영역을 찾음
-    selected_roi_copy,img_origin_copy,object_width,object_height,object_spec_height=sobel(selected_roi,Img_origin,Cursor_xmin,Cursor_xmax,Cursor_ymin,Cursor_ymax,node_x_point,node_y_point) ## 영역분리 지금 엠보싱 연산으로 전체길이를 구했는데 이는 매우 부정확, plantcv의 findtip 으로 구하면 편할듯
+    selected_roi_copy,img_origin_copy,object_width,object_height,object_spec_height=sobel(selected_roi,Img_origin,Cursor_xmin,Cursor_xmax,
+    Cursor_ymin,Cursor_ymax,node_x_point,node_y_point,tip_x_point,tip_y_point) ## 영역분리 지금 엠보싱 연산으로 전체길이를 구했는데 이는 매우 부정확, plantcv의 findtip 으로 구하면 편할듯
 
     img3,h,w=tracking(img_origin_copy) ## 색깔 마스크 찾는거 분홍색으로만 해놓음
 
