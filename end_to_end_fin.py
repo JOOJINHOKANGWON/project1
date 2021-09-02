@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
-import argparse
 import os
-from plantcv import plantcv as pcv
+import plantcv as pcv
 import tkinter
-from PIL import Image
 from tkinter import filedialog
 window = tkinter.Tk()
 import pandas as pd
@@ -44,18 +42,18 @@ def onMouse(event, Cursor_x, Cursor_y, flags,img):
         isDragging=False
         Point_x.append(Cursor_x)
         Point_y.append(Cursor_y)
-        print(Point_x)     #
-        print(Point_y)     #
+        ##print(Point_x)     #
+        ##print(Point_y)     #
         Cursor_xmin=min(Point_x)     #
         Cursor_xmax=max(Point_x)     #                   점으로 찍은 네 좌표를 취합해서
         Cursor_ymin=min(Point_y)     #                  직사각형을 그림
         Cursor_ymax=max(Point_y)
         count+=1  #
-        print("count :",count)    #
+        ##print("count :",count)    #
         if count==4:    #
             selected_roi=img[Cursor_ymin:Cursor_ymax,Cursor_xmin:Cursor_xmax]
             
-            print(Cursor_ymin,Cursor_ymax,Cursor_xmin,Cursor_xmax)
+            ##print(Cursor_ymin,Cursor_ymax,Cursor_xmin,Cursor_xmax)
             
             cv2.destroyAllWindows()
 
@@ -109,7 +107,7 @@ def findnode(img):
     return branch_points_img
 
 def find(img6):  ### findnode에서 넘긴 이미지에서 함수가 노드라고 인식한 점들의 좌표를 리스트에 저장
-    print(img6)
+    ##print(img6)
     sum=0
     node_x_point=[]
     node_y_point=[]
@@ -179,11 +177,10 @@ mask_real_height=0  ## 실제 마스크 높이
 mask_real_width=0  ## 실제 마스크 너비
 def checkhow(h,w,object_width,object_height,object_spec_height):
 
-    print('height maskpixel :',h)  ## 마스크 높이 픽셀값
-    print("width mask pixel:", w)  ## 마스크 너비 픽셀값
-    print('object width :', object_width) ## 나무 폭
-    print('object height ', object_height) ## 나무 전체높이
-    print('object spec height', object_spec_height) ## 나무 수간높이
+    ##print('height maskpixel :',h)  ## 마스크 높이 픽셀값
+    ##print('object width :', object_width) ## 나무 폭
+    ##print('object height ', object_height) ## 나무 전체높이
+    ##print('object spec height', object_spec_height) ## 나무 수간높이
 
     real_height=mask_real_height/h ## 실제 길이를 마스크 픽셀길이로 나눠서 1픽셀당 실제 길이를 realh라는 변수로 잡음
     real_width=mask_real_width/w ## 위와 똑같음 realw는 1픽셀당 실제 너비
@@ -193,19 +190,15 @@ def checkhow(h,w,object_width,object_height,object_spec_height):
     final_width=int(real_width*object_width)  ## 전체 폭
     smh=int(real_height*object_spec_height)     ## 수간높이
     sgh=int(final_height-smh)   ## 수관높이
-    print("수목높이,수목너비,수간높이,수관높이",final_height,final_width,smh,sgh)
+    ##print("수목높이,수목너비,수간높이,수관높이",final_height,final_width,smh,sgh)
     return final_height,final_width,smh,sgh
 
 def findtips(img):
     
-    
     ret,img=cv2.threshold(img,127,255,0)
     skeleton=pcv.morphology.skeletonize(mask=img)
     
-
     pcv.params.line_thickness=3
-
-
     tips_img=pcv.morphology.find_tips(skel_img=skeleton)
     
     return tips_img
@@ -220,7 +213,7 @@ def calc2(event):
     global label1,entry,mask_real_width
     mask_real_width=eval(entry2.get())
     label1.config(text="마스크 너비:" +str(eval(entry2.get())))
-    cv2.cvtColor(image,cv2.BGR2)
+    
 
 label3=tkinter.Label(window,text="엔터를 누르면 값이 저장됩니다",width=50,height=10)
 entry=tkinter.Entry(window,width=30)
@@ -287,7 +280,9 @@ def main():
   for i in lst_dir:
     Point_x=[]
     Point_y=[]
-    Img_origin=cv2.imread(f'{file_path}\\'+i)
+    dir_path=os.path.join(file_path,i)
+    ##Img_origin=cv2.imread(f'{file_path}\\'+i)
+    Img_origin=cv2.imread(f'{dir_path}')
   
     count=0;
     rows,cols=Img_origin.shape[:2]
@@ -330,7 +325,8 @@ def main():
             
         
     except:
-        print("no mask")
+        ##print("no mask")
+        pass
    
   wb.save('number_format1.xlsx')
   
